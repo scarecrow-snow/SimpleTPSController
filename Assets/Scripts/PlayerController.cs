@@ -33,7 +33,11 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private float bulletHitMissDistance = 25f;
 
+    [SerializeField]
+    private float animationSmothTime = 0.1f;
 
+    [SerializeField]
+    private float animationTransitionTime = 0.15f;
 
     private CharacterController controller;
     private PlayerInput playerInput;
@@ -47,6 +51,16 @@ public class PlayerController : MonoBehaviour
     private InputAction jumpAction;
     private InputAction shootAction;
 
+
+    [SerializeField] Animator animator;
+
+    int jumpAnimation;
+    int moveXAnimationParameterId;
+    int moveZAnimationParameterId;
+
+    Vector2 currentAnimationBlendVevtor;
+    Vector2 animationVelecity;
+
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
@@ -57,7 +71,17 @@ public class PlayerController : MonoBehaviour
         jumpAction = playerInput.actions["Jump"];
         shootAction = playerInput.actions["Shoot"];
 
+
+        // カーソルを消す
         Cursor.lockState = CursorLockMode.Locked;
+
+
+        // Animator
+        animator = GetComponent<Animator>();
+        jumpAnimation = Animator.StringToHash("Jump");
+        moveXAnimationParameterId = Animator.StringToHash("MoveX");
+        moveZAnimationParameterId = Animator.StringToHash("MoveZ");
+        
     }
 
     void OnEnable()
@@ -79,21 +103,26 @@ public class PlayerController : MonoBehaviour
         }
 
         Vector2 input = moveAction.ReadValue<Vector2>();
-        Vector3 move = new Vector3(input.x, 0, input.y);
+        currentAnimationBlendVevtor = Vector2.SmoothDamp(currentAnimationBlendVevtor, input, ref animationVelecity, animationSmothTime);
+        Vector3 move = new Vector3(currentAnimationBlendVevtor.x, 0, currentAnimationBlendVevtor.y);
         move = move.x * cameraTransform.right.normalized + move.z * cameraTransform.forward.normalized;
         move.y = 0f;
         controller.Move(move * Time.deltaTime * playerSpeed);
 
-        // Changes the height position of the player..
+        animator.SetFloat(moveXAnimationParameterId, currentAnimationBlendVevtor.x);
+        animator.SetFloat(moveZAnimationParameterId, currentAnimationBlendVevtor.y);
+
+        // ジャンプ
         if (jumpAction.triggered && groundedPlayer)
         {
             playerVelocity.y += Mathf.Sqrt(jumpHeight * -3.0f * gravityValue);
+            animator.CrossFade(jumpAnimation, animationTransitionTime);
         }
 
         playerVelocity.y += gravityValue * Time.deltaTime;
         controller.Move(playerVelocity * Time.deltaTime);
 
-        // Rotate toward camera direction
+        // カメラ方向への回転
         Quaternion targetRotation = Quaternion.Euler(0, cameraTransform.eulerAngles.y, 0);
         transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
 
