@@ -9,11 +9,14 @@ public class BulletController : MonoBehaviour
 
     private float speed = 50f;
     private float timeToDestroy = 3f;
+    private const float decalTimeToDestroy = 10f;
+
 
     public Vector3 target { get; set; }
 
     public bool hit { get; set; }
 
+    public Transform decalParent {get; set;}
 
     void OnEnable()
     {
@@ -35,8 +38,8 @@ public class BulletController : MonoBehaviour
     {
         var contact = other.GetContact(0);
         // ヒットしたオブジェクトの法線から向きを取得してデカールを生成
-        Instantiate(bulletDecal, contact.point + contact.normal * 0.001f, Quaternion.LookRotation(contact.normal));
-
+        var decal = Instantiate(bulletDecal, contact.point + contact.normal * 0.001f, Quaternion.LookRotation(contact.normal), decalParent);
+        Destroy(decal, decalTimeToDestroy);
         Destroy(gameObject);
     }
 

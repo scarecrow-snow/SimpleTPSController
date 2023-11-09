@@ -10,17 +10,17 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(CharacterController), typeof(PlayerInput))]
 public class PlayerController : MonoBehaviour
 {
-
+    [Header("Player Parameter")]
     [SerializeField]
     private float playerSpeed = 2.0f;
     [SerializeField]
     private float jumpHeight = 1.0f;
     [SerializeField]
     private float gravityValue = -9.81f;
-
     [SerializeField]
     private float rotationSpeed = 5f;
 
+    [Header("Bullet and Decal")]
     [SerializeField]
     private GameObject bulletPrefab;
 
@@ -29,15 +29,25 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField]
     private Transform bulletParentTransform;
-
     [SerializeField]
     private float bulletHitMissDistance = 25f;
 
+    [SerializeField]
+    private Transform decalParentTransform;
+
+
+    [Header("Animation")]
     [SerializeField]
     private float animationSmothTime = 0.1f;
 
     [SerializeField]
     private float animationTransitionTime = 0.15f;
+
+    [Header("Aim")]
+    [SerializeField]
+    private Transform aimTarget;
+    [SerializeField]
+    private float aimDistance = 10f;
 
     private CharacterController controller;
     private PlayerInput playerInput;
@@ -54,9 +64,11 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField] Animator animator;
 
+    int recoilAnimation;
     int jumpAnimation;
     int moveXAnimationParameterId;
     int moveZAnimationParameterId;
+
 
     Vector2 currentAnimationBlendVevtor;
     Vector2 animationVelecity;
@@ -79,6 +91,7 @@ public class PlayerController : MonoBehaviour
         // Animator
         animator = GetComponent<Animator>();
         jumpAnimation = Animator.StringToHash("Jump");
+        recoilAnimation = Animator.StringToHash("PistolShootRecoil");
         moveXAnimationParameterId = Animator.StringToHash("MoveX");
         moveZAnimationParameterId = Animator.StringToHash("MoveZ");
         
@@ -96,6 +109,10 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        aimTarget.position = cameraTransform.position + cameraTransform.forward * aimDistance;
+
+
+
         groundedPlayer = controller.isGrounded;
         if (groundedPlayer && playerVelocity.y < 0)
         {
@@ -134,6 +151,7 @@ public class PlayerController : MonoBehaviour
         RaycastHit hit;
         var bullet = Instantiate(bulletPrefab, barrelTransform.position, Quaternion.identity, bulletParentTransform);
         BulletController bulletController = bullet.GetComponent<BulletController>();
+        bulletController.decalParent = decalParentTransform;
 
         if(Physics.Raycast(cameraTransform.position, cameraTransform.forward, out hit, Mathf.Infinity))
         {
@@ -145,5 +163,7 @@ public class PlayerController : MonoBehaviour
             bulletController.target = cameraTransform.position + cameraTransform.forward * bulletHitMissDistance;
             bulletController.hit = false;
         }
+
+        animator.CrossFade(recoilAnimation, animationTransitionTime);
     }
 }
